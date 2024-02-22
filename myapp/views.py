@@ -75,15 +75,15 @@ def get_student_by_id(student_id):
     return HttpResponse(data)
 
 def update_student_by_id(student_id, new_student_data):
+    try:
+        student = Student.objects.get(pk=student_id)
+    except Student.DoesNotExist:
+        raise Http404("Student does not exist")
     new_name = new_student_data.get("name")
     new_email = new_student_data.get("email")
     new_phone = new_student_data.get("phone")
     new_address = new_student_data.get("address")
     new_city = new_student_data.get("city")
-    try:
-        student = Student.objects.get(pk=student_id)
-    except Student.DoesNotExist:
-        raise Http404("Student does not exist")
     student.name = new_name
     student.email = new_email
     student.phone = new_phone
@@ -137,3 +137,51 @@ def get_all_add_course(request):
         return HttpResponse(data, content_type='application/json')
     else:
         return HttpResponseBadRequest('Invalid Course data')
+
+@csrf_exempt
+def get_all_add_student_course(request):
+    if request.method == 'POST':
+        body = json.loads(request.body.decode('utf-8'))
+        student_id = body.get('student_id')
+        course_id = body.get('course_id')
+        course = Student_Course(student_id=Student.objects.get(pk=student_id), course_id=Course.objects.get(pk=course_id))
+        course.save()
+        return HttpResponse('Enrolled Student to Course successfully')
+    elif request.method == 'GET':
+        Courses = Student_Course.objects.all()
+        data = serializers.serialize("json", Courses)
+        return HttpResponse(data, content_type='application/json')
+    else:
+        return HttpResponseBadRequest('Invalid Course data')
+
+@csrf_exempt
+def get_courses_by_student(request):
+    if request.method == 'GET':
+        student_id = request.GET.get('student_id')
+        course_ids = Student_Course.objects.filter(student_id=student_id).values_list('course_id', flat=True)
+        Courses = Course.objects.filter(id__in=course_ids)
+        data = serializers.serialize("json", Courses)
+        return HttpResponse(data, content_type='application/json')
+    else:
+        return HttpResponseBadRequest('Invalid Request')
+
+@csrf_exempt
+def get_students_by_course(request):
+    if request.method == 'GET':
+        course_id = request.GET.get('course_id')
+        student_ids = Student_Course.objects.filter(course_id=course_id).values_list('student_id', flat=True)
+        student = Student.objects.filter(id__in=student_ids)
+        data = serializers.serialize("json", student)
+        return HttpResponse(data, content_type='application/json')
+    else:
+        return HttpResponseBadRequest('Invalid Request')
+@csrf_exempt
+def drop_course_for_student(request):
+    if request.method == 'DELETE':
+        student_id = request.GET.get('student_id')
+        course_id = request.GET.get('course_id')
+        student_course = Student_Course.objects.filter(course_id=course_id, student_id=student_id)
+        student_course.delete()
+        return HttpResponse("Unenrolled Student successfully",status=200)
+    else:
+        return HttpResponseBadRequest('Invalid Request')
