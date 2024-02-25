@@ -1,14 +1,20 @@
-from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotAllowed, Http404
 from .models import Student, Course, Student_Course
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 import json
 from django.core import serializers
+from django.contrib.auth import get_user_model
+from django.shortcuts import render, redirect
+from django.contrib.auth import login, authenticate
+from django.contrib.auth.hashers import make_password
+
 
 # Create your views here.
 
 # def home(request):
 #     return HttpResponse('<h1>Blog Home</h1>')
+User = get_user_model()
+
 def home(request):
     return render(request, 'home.html')
 
@@ -185,3 +191,28 @@ def drop_course_for_student(request):
         return HttpResponse("Unenrolled Student successfully",status=200)
     else:
         return HttpResponseBadRequest('Invalid Request')
+@csrf_exempt
+def user_login(request):
+    data = json.loads(request.body.decode('utf-8'))
+    if request.method == 'POST':
+        username = data['username']
+        password = data['password']
+        user = User.objects.filter(username=username, password=password)
+
+        if user is not None:
+            return  HttpResponse("Login successful",status=200)
+        else :
+            return HttpResponse("Login failed",status=400)
+    return HttpResponseBadRequest('Invalid Request')
+@csrf_exempt
+def register(request):
+    data = json.loads(request.body.decode('utf-8'))
+    if request.method == 'POST':
+        user = User(
+        username=data['username'],
+        email=data['email'],
+        password=(data['password']), 
+        )
+        user.save()
+        return HttpResponse("Register successful",status=200)
+    return HttpResponseBadRequest('Invalid Request')
