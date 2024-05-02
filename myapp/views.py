@@ -197,22 +197,32 @@ def user_login(request):
     if request.method == 'POST':
         username = data['username']
         password = data['password']
-        user = User.objects.filter(username=username, password=password)
-
-        if user is not None:
+        email = data['email']
+        # check if username provided or email to authenticate
+        if username:
+            user = User.objects.filter(username=username, password=password)
+        else:
+            user = User.objects.filter(email=email, password=password)
+        records_list = list(user.values())
+        if records_list:
             return  HttpResponse("Login successful",status=200)
-        else :
-            return HttpResponse("Login failed",status=400)
+        else:
+            return HttpResponse("Login failed",status=401)
     return HttpResponseBadRequest('Invalid Request')
 @csrf_exempt
 def register(request):
-    data = json.loads(request.body.decode('utf-8'))
+    data = json.loads(request.body)
     if request.method == 'POST':
         user = User(
         username=data['username'],
         email=data['email'],
         password=(data['password']), 
         )
+        # Check if user already exists
+        if User.objects.filter(username=user.username).exists():
+            return HttpResponse('User already exists', status=409)
+
+        # If user does not exist, create a new user
         user.save()
-        return HttpResponse("Register successful",status=200)
+        return HttpResponse("Register successful", status=200)
     return HttpResponseBadRequest('Invalid Request')
