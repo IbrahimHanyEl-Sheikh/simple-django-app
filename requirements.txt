@@ -1,2 +1,4 @@
 django
 django-cors-headers
+drf-yasg==1.21.7
+Faker==25.0.0

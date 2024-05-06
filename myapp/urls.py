@@ -9,9 +9,9 @@ urlpatterns = [
     path('courses/<int:id>',views.get_update_delete_course_by_id, name='myapp-get-course-by-id'),
     path('courses/',views.get_all_add_course, name='myapp-add-course'),
     path('course_students/',views.get_all_add_student_course, name='myapp-get-all-add-student-course'),
-    path('course_students/by_student/',views.get_courses_by_student, name='myapp-get-courses-by-student'),
+    path('course_students/by_student',views.get_courses_by_student, name='myapp-get-courses-by-student'),
     path('course_students/by_course/',views.get_students_by_course, name='myapp-get-students-by-course'),
     path('course_students/drop/',views.drop_course_for_student, name='myapp-get-course-student-by-id'),
-    path('login',views.user_login, name='myapp-user-login'),
-    path('register',views.register, name='myapp-register'),
+    path('login/', views.user_login, name='myapp-user-login'),
+    path('register/',views.register, name='myapp-register'),
 ]

@@ -1,4 +1,4 @@
-from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotAllowed, Http404
+from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotAllowed, Http404,JsonResponse
 from .models import Student, Course, Student_Course
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 import json
@@ -7,6 +7,10 @@ from django.contrib.auth import get_user_model
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.hashers import make_password
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+from rest_framework.decorators import api_view
+
 
 
 # Create your views here.
@@ -160,13 +164,52 @@ def get_all_add_student_course(request):
     else:
         return HttpResponseBadRequest('Invalid Course data')
 
+@swagger_auto_schema(
+    method='get',
+    operation_description="Get courses enrolled by a student",
+    manual_parameters=[
+        openapi.Parameter(
+            'student_username', openapi.IN_QUERY, description="Student's username", type=openapi.TYPE_STRING
+        )
+    ],
+    responses={
+        200: "OK",
+        400: "Bad Request",
+        'application/json': openapi.Schema(
+            type=openapi.TYPE_ARRAY,
+            items=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'id': openapi.Schema(type=openapi.TYPE_INTEGER),
+                    'name': openapi.Schema(type=openapi.TYPE_STRING),
+                    'duration': openapi.Schema(type=openapi.TYPE_INTEGER),
+                }
+            )
+        )
+    }
+)
 @csrf_exempt
+@api_view(['GET'])
 def get_courses_by_student(request):
     if request.method == 'GET':
-        student_id = request.GET.get('student_id')
+        student_username = request.GET.get('student_username')
+        student_id = Student.objects.filter(username=student_username).values_list('id', flat=True).first()
         course_ids = Student_Course.objects.filter(student_id=student_id).values_list('course_id', flat=True)
-        Courses = Course.objects.filter(id__in=course_ids)
-        data = serializers.serialize("json", Courses)
+        courses = Course.objects.filter(id__in=course_ids)
+        data = []
+        print(courses)
+        for course in courses:
+            course_data = {
+                'id': course.id,
+                'fields': {
+                    'name': course.name,
+                    'duration': course.duration
+                }
+            }
+            data.append(course_data)
+        print(data)
+        return JsonResponse(data, safe=False)
+        data = serializers.serialize("json", data)
         return HttpResponse(data, content_type='application/json')
     else:
         return HttpResponseBadRequest('Invalid Request')
@@ -191,38 +234,69 @@ def drop_course_for_student(request):
         return HttpResponse("Unenrolled Student successfully",status=200)
     else:
         return HttpResponseBadRequest('Invalid Request')
+    
+@swagger_auto_schema(
+    method='post',
+    operation_description="Login a user",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'username': openapi.Schema(type=openapi.TYPE_STRING, description="User's username"),
+            'password': openapi.Schema(type=openapi.TYPE_STRING, description="User's password"),
+        },
+        required=['username', 'password']
+    ),
+    responses={200: "Login successful", 401: "Login failed", 400: "Bad Request"}
+)
 @csrf_exempt
+@api_view(['POST'])
 def user_login(request):
-    data = json.loads(request.body.decode('utf-8'))
+    data = json.loads(request.body)
     if request.method == 'POST':
         username = data['username']
         password = data['password']
-        email = data['email']
-        # check if username provided or email to authenticate
-        if username:
-            user = User.objects.filter(username=username, password=password)
-        else:
-            user = User.objects.filter(email=email, password=password)
+        # email = data['email']
+
+        # if username:
+        #     user = Student.objects.filter(username=username, password=password)
+        # else:
+        user = Student.objects.filter(username=username, password=password)
         records_list = list(user.values())
         if records_list:
             return  HttpResponse("Login successful",status=200)
         else:
             return HttpResponse("Login failed",status=401)
     return HttpResponseBadRequest('Invalid Request')
+
+@swagger_auto_schema(
+    method='post',
+    operation_description="Register a new user",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'username': openapi.Schema(type=openapi.TYPE_STRING, description="User's username"),
+            'email': openapi.Schema(type=openapi.TYPE_STRING, description="User's email"),
+            'password': openapi.Schema(type=openapi.TYPE_STRING, description="User's password"),
+        },
+        required=['username', 'email', 'password']
+    ),
+    responses={200: "Register successful", 409: "Student already exists", 400: "Bad Request"}
+)
 @csrf_exempt
+@api_view(['POST'])
 def register(request):
     data = json.loads(request.body)
     if request.method == 'POST':
-        user = User(
-        username=data['username'],
-        email=data['email'],
-        password=(data['password']), 
+        student = Student(
+            username=data['username'],  # Assuming 'username' corresponds to the student's name
+            email=data['email'],
+            password=make_password(data['password']),  # Hash the password
         )
-        # Check if user already exists
-        if User.objects.filter(username=user.username).exists():
-            return HttpResponse('User already exists', status=409)
+        # Check if student already exists
+        if Student.objects.filter(username=student.username).exists():
+            return HttpResponse('Student already exists', status=409)
 
-        # If user does not exist, create a new user
-        user.save()
+        # If student does not exist, create a new student
+        student.save()
         return HttpResponse("Register successful", status=200)
     return HttpResponseBadRequest('Invalid Request')
