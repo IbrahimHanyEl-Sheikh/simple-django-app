@@ -10,6 +10,7 @@ from django.contrib.auth.hashers import make_password
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from rest_framework.decorators import api_view
+from django.contrib.auth.hashers import check_password
 
 
 
@@ -260,12 +261,12 @@ def user_login(request):
         # if username:
         #     user = Student.objects.filter(username=username, password=password)
         # else:
-        user = Student.objects.filter(username=username, password=password)
-        records_list = list(user.values())
-        if records_list:
-            return  HttpResponse("Login successful",status=200)
-        else:
+
+        user = Student.objects.filter(username=username)
+        if not user or not check_password(password, user.first().password):
             return HttpResponse("Login failed",status=401)
+        else:
+            return  HttpResponse("Login successful",status=200)
     return HttpResponseBadRequest('Invalid Request')
 
 @swagger_auto_schema(
