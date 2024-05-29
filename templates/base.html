@@ -1,0 +1,31 @@
+{% {% load static %}%}
+<html lang="en" >
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- title for name in browser's tab -->
+    <title>Learn with Codecad  {%{% block title %}
+    {% endblock %}%}</title>
+    <!-- Link an external CSS file to this HTML doc -->
+    <link rel="stylesheet" href="{% static "css/style.css" %}">
+</head>
+<!-- body setion for page content -->
+<body>
+    <header>
+        <h2 class="logo">Codecad</h2>
+        <nav class="navigation">
+            <a href="#">Home</a>
+            <a href="#">About</a>
+            <a href="#">Services</a>
+            <a href="#">Contact</a>
+            <button class="btnlogin-popup">Login</button>
+        </nav>
+    </header>
+
+    <script src="script.js"></script>
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+<script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+</body>
+
+</html>

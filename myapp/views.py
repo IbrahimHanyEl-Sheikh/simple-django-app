@@ -11,7 +11,7 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from rest_framework.decorators import api_view
 from django.contrib.auth.hashers import check_password
-
+from .serializers import CourseSerializer
 
 
 # Create your views here.
@@ -145,18 +145,26 @@ def get_all_add_course(request):
     elif request.method == 'GET':
         Courses = Course.objects.all()
         data = serializers.serialize("json", Courses)
+        print(data)
         return HttpResponse(data, content_type='application/json')
     else:
         return HttpResponseBadRequest('Invalid Course data')
 
 @csrf_exempt
 def get_all_add_student_course(request):
+    #changed the code to expect username instead of id
     if request.method == 'POST':
         body = json.loads(request.body.decode('utf-8'))
-        student_id = body.get('student_id')
-        course_id = body.get('course_id')
+        # student_id = body.get('student_id')
+        student_username = body.get('username')
+        student_id = Student.objects.filter(username=student_username).values_list('id', flat=True).first()
+        # course_id = body.get('course_id')
+        course_name = body.get('course')
+        course_id = Course.objects.filter(name=course_name).values_list('id', flat=True).first()
+
         course = Student_Course(student_id=Student.objects.get(pk=student_id), course_id=Course.objects.get(pk=course_id))
         course.save()
+        print(f"{course_id} {course_name} has a new member {student_id} {student_username}!!")
         return HttpResponse('Enrolled Student to Course successfully')
     elif request.method == 'GET':
         Courses = Student_Course.objects.all()
@@ -192,6 +200,7 @@ def get_all_add_student_course(request):
 @csrf_exempt
 @api_view(['GET'])
 def get_courses_by_student(request):
+    #changed the code to expect username instead of id
     if request.method == 'GET':
         student_username = request.GET.get('student_username')
         student_id = Student.objects.filter(username=student_username).values_list('id', flat=True).first()
@@ -227,9 +236,15 @@ def get_students_by_course(request):
         return HttpResponseBadRequest('Invalid Request')
 @csrf_exempt
 def drop_course_for_student(request):
+    #changing the code to expect username instead of id
     if request.method == 'DELETE':
-        student_id = request.GET.get('student_id')
-        course_id = request.GET.get('course_id')
+        data = json.loads(request.body)
+        student_username = data['student_username']
+        student_id = Student.objects.filter(username=student_username).values_list('id', flat=True).first()
+        # student_id = request.GET.get('student_id')
+        course_name = data['course']
+        course_id = Course.objects.filter(name=course_name).values_list('id', flat=True).first()
+        # course_id = request.GET.get('course_id')
         student_course = Student_Course.objects.filter(course_id=course_id, student_id=student_id)
         student_course.delete()
         return HttpResponse("Unenrolled Student successfully",status=200)

@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand
 from myapp.models import Student, Course, Student_Course
 from faker import Faker
 import random
+from django.contrib.auth.hashers import make_password
 
 class Command(BaseCommand):
     help = 'Populates the database with dummy data'
@@ -29,7 +30,7 @@ class Command(BaseCommand):
                 phone=fake.phone_number(),
                 address=fake.address(),
                 city=fake.city(),
-                password=fake.password()
+                password=make_password(fake.password())
             )
 
             # Choose a random course from predefined names
