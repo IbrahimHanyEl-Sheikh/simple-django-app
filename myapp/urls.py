@@ -14,4 +14,5 @@ urlpatterns = [
     path('course_students/drop/',views.drop_course_for_student, name='myapp-get-course-student-by-id'),
     path('login/', views.user_login, name='myapp-user-login'),
     path('register/',views.register, name='myapp-register'),
+    path('courses/create/',views.create_course, name='myapp-create-course'),
 ]

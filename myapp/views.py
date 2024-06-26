@@ -316,3 +316,19 @@ def register(request):
         student.save()
         return HttpResponse("Register successful", status=200)
     return HttpResponseBadRequest('Invalid Request')
+
+
+@csrf_exempt
+@api_view(['POST'])
+def create_course(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        course = Course(
+            name=data['name'],
+            duration=data['duration'],
+        )
+        course.save()
+        return HttpResponse("Course created successfully", status=200)
+    else:
+        return JsonResponse("Bad Request", status=400)
+    
